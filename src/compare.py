@@ -52,6 +52,11 @@ def compare_entries(reference_data, other_data, show_matches):
         else:
             print("\nNo matches found.")
 
+    # Calculate and print sum of amounts for each file
+    ref_sum = sum(row['Amount'] for row in reference_data)
+    cmp_sum = sum(row['Amount'] for row in other_data)
+    print(f"\nTotal amount in Reference File: {ref_sum:.2f}")
+    print(f"Total amount in Compare File: {cmp_sum:.2f}")
    
 def main():
     parser = argparse.ArgumentParser(description='Compare two CSV files and find mismatched entries.')
