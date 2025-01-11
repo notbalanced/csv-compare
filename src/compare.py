@@ -8,7 +8,7 @@ def parse_amount(amount):
 
 def get_description_key(entry):
     """ Find possible key for description field in the entry """
-    possible_keys = ['Description', 'Memo', 'Transaction description', 'Payee', 'Name','Memo/Description', 'Transaction']
+    possible_keys = ['Description', 'Memo', 'Transaction description', 'Payee', 'Name','Memo/Description', 'Transaction Detail']
     for key in entry.keys():
         if key in possible_keys or 'description' in key.lower():
             return key
@@ -28,20 +28,31 @@ def read_csv(file_path):
 def compare_entries(reference_data, other_data, date_delta = 4):
     matches = []
     mismatches = []
-    for ref_row in reference_data:
+    matched_ref_indices = set()
+    matched_other_indices = set()
+
+    for ref_idx,ref_row in enumerate(reference_data):
         matched = False
-        for other_row in other_data:
+        for other_idx, other_row in enumerate(other_data):
+            if other_idx in matched_other_indices:
+                continue
             date_diff = abs((ref_row['Date'] - other_row['Date']).days)
             if ref_row['Amount'] == other_row['Amount'] and date_diff <= date_delta:
                 matched = True
                 matches.append((ref_row, other_row))
+                matched_ref_indices.add(ref_idx)
+                matched_other_indices.add(other_idx)
                 break
         if not matched:
             mismatches.append((ref_row, 'Reference File'))
 
-    for other_row in other_data:
+    for other_idx, other_row in enumerate(other_data):
+        if other_idx in matched_other_indices:
+            continue
         matched = False
-        for ref_row in reference_data:
+        for ref_idx, ref_row in enumerate(reference_data):
+            if ref_idx in matched_ref_indices:
+                continue
             date_diff = abs((ref_row['Date'] - other_row['Date']).days)
             if ref_row['Amount'] == other_row['Amount'] and date_diff <= date_delta:
                 matched = True
@@ -97,8 +108,13 @@ def main():
     if args.show_matches:
         if matches:
             print("\nMatched entries:")
+            print(f"{'Ref Date':<12}{'Ref Description':<50}{'Ref Amt':<10}{'Other Date':<12}{'Other Description':<50}{'Other Amt':<10}")
+            print("-" * 150)
             for ref, other in matches:
-                print(f"Reference: {ref}, Other: {other}")
+                ref_date = ref['Date'].strftime('%m/%d/%Y')
+                other_date = other['Date'].strftime('%m/%d/%Y')
+                print(f"{ref_date:<12}{ref['Description']:<50}{ref['Amount']:<10.2f}{other_date:<12}{other['Description']:<50}{other['Amount']:<10.2f}")
+                #print(f"Reference: {ref}, Other: {other}")
         else:
             print("\nNo matches found.")
 
@@ -108,12 +124,6 @@ def main():
     print(f"\nTotal amount in Reference File: {ref_sum:.2f}")
     print(f"Total amount in Compare File: {cmp_sum:.2f}")
 
-    # if mismatches:
-    #     print("Mismatched entries:")
-    #     for mismatch in mismatches:
-    #         print(f"Source: {mismatch['source']}, Entry: {mismatch['entry']}")
-    # else:
-    #     print("All entries match.")
-
+ 
 if __name__ == "__main__":
     main()
