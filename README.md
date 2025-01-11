@@ -1,45 +1,39 @@
-# CSV Comparison Project
+# CSV Compare
 
 This project is designed to compare entries between a reference CSV file exported from a bank and another CSV file. It identifies and displays entries that do not match, helping users to easily spot discrepancies in their financial records.
 
-## Project Structure
+Each entry should include:
+- Date in MM/DD/YYYY format
+- Description
+- Amount
 
-```
-csv-comparison-project
-├── src
-│   ├── compare.py          # Main logic for comparing CSV entries
-│   └── utils
-│       └── file_operations.py  # Utility functions for file operations
-├── data
-│   ├── bank_reference.csv   # Reference data from the bank
-│   ├── other_file.csv       # Other CSV data for comparison
-├── requirements.txt         # Project dependencies
-└── README.md                # Project documentation
-```
 
 ## Installation
 
 1. Clone the repository:
    ```
    git clone <repository-url>
-   cd csv-comparison-project
-   ```
-
-2. Install the required dependencies:
-   ```
-   pip install -r requirements.txt
+   cd csv-compare
    ```
 
 ## Usage
+```
+usage: csv-compare.py [-h] [-s] [-d DATE_DELTA] [-o OUTPUT_FILE] reference_file other_file
 
-1. Ensure that the `data/bank_reference.csv` and `data/other_file.csv` files are populated with the appropriate data.
-2. Run the comparison script:
-   ```
-   python src/compare.py
-   ```
+Compare two CSV files and find mismatched entries.
 
-3. Review the output for any mismatched entries.
+positional arguments:
+  reference_file        Path to the reference CSV file
+  other_file            Path to the other CSV file
 
+options:
+  -h, --help            show this help message and exit
+  -s, --show-matches    Show matched entries
+  -d DATE_DELTA, --date-delta DATE_DELTA
+                        Number of days to consider for date matching
+  -o OUTPUT_FILE, --output-file OUTPUT_FILE
+                        Path to the output CSV file
+```
 ## Contributing
 
 Feel free to submit issues or pull requests for improvements or bug fixes.
