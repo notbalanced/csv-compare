@@ -1,56 +1,77 @@
 import argparse
-import pandas as pd
+import csv
 from datetime import datetime, timedelta
 
 def read_csv(file_path):
-    df = pd.read_csv(file_path)
-    df['Date'] = pd.to_datetime(df['Date'], format='%m/%d/%Y')
-    return df[['Date', 'Amount']].to_dict(orient='records')
+    """Reads a CSV file and returns a list of rows as dictionaries."""
+    with open(file_path, mode='r') as file:
+        reader = csv.DictReader(file)
+        data = list(reader)
+        for entry in data:
+            entry['Date'] = datetime.strptime(entry['Date'], '%m/%d/%Y')
+            entry['Amount'] = float(entry['Amount'])
+        return data
 
-def compare_entries(reference_data, other_data):
+def compare_entries(reference_data, other_data, show_matches):
+    matches = []
     mismatches = []
-    reference_set = {(entry['Date'], entry['Amount']) for entry in reference_data}
-    other_set = {(entry['Date'], entry['Amount']) for entry in other_data}
 
-    def is_within_date_range(date, amount, data_set):
-        date_range = [(date + timedelta(days=i), amount) for i in range(-4, 5)]
-        for d in date_range:
-            if (d,amount) in data_set:
-                return True
-        return any((d, amount) in data_set for d in date_range)
+    for ref_row in reference_data:
+        matched = False
+        for other_row in other_data:
+            date_diff = abs((ref_row['Date'] - other_row['Date']).days)
+            if ref_row['Amount'] == other_row['Amount'] and date_diff <= 4:
+                matched = True
+                matches.append((ref_row, other_row))
+                break
+        if not matched:
+            mismatches.append((ref_row, 'Reference File'))
 
-    for entry in other_data:
-        date = entry['Date']
-        amount = entry['Amount']
-        if not is_within_date_range(date, amount, reference_set):
-            mismatches.append({'entry': entry, 'source': 'other_data'})
+    for other_row in other_data:
+        matched = False
+        for ref_row in reference_data:
+            date_diff = abs((ref_row['Date'] - other_row['Date']).days)
+            if ref_row['Amount'] == other_row['Amount'] and date_diff <= 4:
+                matched = True
+                break
+        if not matched:
+            mismatches.append((other_row, 'Other File'))
 
-    for entry in reference_data:
-        date = entry['Date']
-        amount = entry['Amount']
-        if not is_within_date_range(date, amount, other_set):
-            mismatches.append({'entry': entry, 'source': 'reference_data'})
+    if mismatches:
+        print("\nMismatched entries:")
+        for entry, source in mismatches:
+            print(f"Source: {source}, Entry: {entry}")  
+    else:
+        print("\nNo mismatches found.")
 
-    return mismatches
+    if show_matches:
+        if matches:
+            print("\nMatched entries:")
+            for ref, other in matches:
+                print(f"Reference: {ref}, Other: {other}")
+        else:
+            print("\nNo matches found.")
 
+   
 def main():
     parser = argparse.ArgumentParser(description='Compare two CSV files and find mismatched entries.')
     parser.add_argument('reference_file', type=str, help='Path to the reference CSV file')
     parser.add_argument('other_file', type=str, help='Path to the other CSV file')
+    parser.add_argument('-s', '--show-matches', action='store_true', help='Show matched entries')
 
     args = parser.parse_args()
 
     reference_data = read_csv(args.reference_file)
     other_data = read_csv(args.other_file)
 
-    mismatches = compare_entries(reference_data, other_data)
+    compare_entries(reference_data, other_data, args.show_matches)
 
-    if mismatches:
-        print("Mismatched entries:")
-        for mismatch in mismatches:
-            print(f"Source: {mismatch['source']}, Entry: {mismatch['entry']}")
-    else:
-        print("All entries match.")
+    # if mismatches:
+    #     print("Mismatched entries:")
+    #     for mismatch in mismatches:
+    #         print(f"Source: {mismatch['source']}, Entry: {mismatch['entry']}")
+    # else:
+    #     print("All entries match.")
 
 if __name__ == "__main__":
     main()
