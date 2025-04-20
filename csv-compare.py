@@ -15,7 +15,7 @@ def get_description_key(entry):
             return key
     raise ValueError("Description key not found in the entry")
 
-def read_csv(file_path):
+def read_csv(file_path, invert_amount=False):
     """Reads a CSV file and returns a list of rows as dictionaries."""
     with open(file_path, mode='r') as file:
         reader = csv.DictReader(file)
@@ -23,6 +23,8 @@ def read_csv(file_path):
         for entry in data:
             entry['Date'] = datetime.strptime(entry['Date'], '%m/%d/%Y')
             entry['Amount'] = parse_amount(entry['Amount'])
+            if invert_amount:
+                entry['Amount'] = -entry['Amount']
             entry['Description'] = entry[get_description_key(entry)]
         return data, reader.fieldnames  # Return data and fieldnames
 
@@ -100,11 +102,12 @@ def main():
     parser.add_argument('-d', '--date-delta', type=int, default=4, help='Number of days to consider for date matching')
     parser.add_argument('-o', '--output-file', type=str, help='Path to the output CSV file for mismatches')
     parser.add_argument('-m', '--matches-file', type=str, help='Path to the output CSV file for matches')
+    parser.add_argument('-a', '--invert-amount', action='store_true', help='Invert the amount in the other file')
 
     args = parser.parse_args()
 
     reference_data, reference_fieldnames = read_csv(args.reference_file)
-    other_data, other_fieldnames = read_csv(args.other_file)
+    other_data, other_fieldnames = read_csv(args.other_file, args.invert_amount)
 
     # Merge fieldnames
     all_fieldnames = list(set(reference_fieldnames + other_fieldnames))
